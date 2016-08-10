@@ -8,7 +8,9 @@
 #include <cmath>
 #include <algorithm>
 
-#ifdef __SSSE3__
+#ifdef RS_USE_CUDA
+#include "cuda-conversion.cuh"
+#elif defined __SSSE3__
 #include <tmmintrin.h> // For SSE3 intrinsics used in unpack_yuy2_sse
 #endif
 
@@ -67,7 +69,9 @@ namespace rsimpl
     template<rs_format FORMAT> void unpack_yuy2(byte * const d [], const byte * s, int n)
     {
         assert(n % 16 == 0); // All currently supported color resolutions are multiples of 16 pixels. Could easily extend support to other resolutions by copying final n<16 pixels into a zero-padded buffer and recursively calling self for final iteration.
-#ifdef __SSSE3__
+#ifdef RS_USE_CUDA
+		unpack_yuy2_cuda<FORMAT>(d, s, n);
+#elif defined __SSSE3__
         auto src = reinterpret_cast<const __m128i *>(s);
         auto dst = reinterpret_cast<__m128i *>(d[0]);
         for(; n; n -= 16)
